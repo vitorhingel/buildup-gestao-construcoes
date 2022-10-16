@@ -1,0 +1,31 @@
+a {
+  color: #cf7c48;
+  text-decoration: none;
+}
+
+a:hover,
+a:active {
+  font-weight: bold;
+  color: #cf7c48;
+}
+
+a:visited {
+  color: #cf7c48;
+}
+
+[data-active="true"] {
+  background-color: #cf7c48 !important;
+  color: #fff !important;
+}
+
+.activeAppBarLink {
+  background-color: #cf7c48;
+}
+.MuiPickersDay-root.Mui-selected {
+  color: #fff !important;
+  font-weight: 700 !important;
+}
+
+#search-projects {
+  padding-left: 0px;
+}
