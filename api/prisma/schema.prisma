@@ -1,0 +1,204 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model CategoriaProdutos {
+  id               Int        @id @default(autoincrement())
+  dataCriacao     DateTime   @default(now()) @db.Timestamp(0) @map("data_criacao")
+  dataAtualizacao DateTime?  @db.Timestamp(0) @map("data_atualizacao")
+  nome             String     @db.VarChar(150)
+  descricao        String?    @db.VarChar(1000)
+  produtos         Produtos[]
+
+  @@map("categoria_produtos")
+}
+
+model Cidades {
+  id               Int         @id @default(autoincrement())
+  dataCriacao     DateTime    @default(now()) @db.Timestamp(0) @map("data_criacao")
+  dataAtualizacao DateTime?   @db.Timestamp(0) @map("data_atualizacao")
+  nome             String      @db.VarChar(150)
+  estadoId        Int @map("estado_id")
+  estados          Estados     @relation(fields: [estadoId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_cidades_estados")
+  enderecos        Enderecos[]
+
+  @@index([estadoId], map: "fk_cidades_estados_idx")
+  @@map("cidades")
+}
+
+model Colaboradores {
+  id               Int           @id @default(autoincrement())
+  dataCriacao     DateTime      @default(now()) @db.Timestamp(0) @map("data_criacao")
+  dataAtualizacao DateTime?     @db.Timestamp(0) @map("data_atualizacao")
+  ativo            Boolean
+  usuarioId       Int @map("usuario_id")
+  projetoId       Int @map("projeto_id")
+  projetos         Projetos      @relation(fields: [projetoId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_colaboradores_projetos1")
+  usuarios         Usuarios      @relation(fields: [usuarioId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_colaboradores_usuarios1")
+  comentarios      Comentarios[]
+  tarefas          Tarefas[]
+
+  @@index([projetoId], map: "fk_colaboradores_projetos1_idx")
+  @@index([usuarioId], map: "fk_colaboradores_usuarios1_idx")
+  @@map("colaboradores")
+}
+
+model Comentarios {
+  id               Int           @id @default(autoincrement())
+  dataCriacao     DateTime      @default(now()) @db.Timestamp(0) @map("data_criacao")
+  dataAtualizacao DateTime?     @db.Timestamp(0) @map("data_atualizacao")
+  titulo           String        @db.VarChar(150)
+  conteudo         String        @db.VarChar(1000)
+  tarefaId        Int @map("tarefa_id")
+  colaboradorId   Int @map("colaborador_id")
+  colaboradores    Colaboradores @relation(fields: [colaboradorId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_comentarios_colaboradores1")
+  tarefas          Tarefas       @relation(fields: [tarefaId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_comentarios_tarefas1")
+
+  @@index([colaboradorId], map: "fk_comentarios_colaboradores1_idx")
+  @@index([tarefaId], map: "fk_comentarios_tarefas1_idx")
+  @@map("comentarios")
+}
+
+model Enderecos {
+  id               Int        @id @default(autoincrement())
+  dataCriacao     DateTime   @default(now()) @db.Timestamp(0) @map("data_criacao")
+  dataAtualizacao DateTime?  @db.Timestamp(0) @map("data_atualizacao")
+  rua              String     @db.VarChar(200)
+  numero           Int
+  cep              String     @db.VarChar(10)
+  complemento      String?    @db.VarChar(600)
+  cidadeId        Int @map("cidade_id")
+  cidades          Cidades    @relation(fields: [cidadeId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_enderecos_cidades1")
+  projetos         Projetos[]
+  usuarios         Usuarios[]
+
+  @@index([cidadeId], map: "fk_enderecos_cidades1_idx")
+  @@map("enderecos")
+}
+
+model Estados {
+  id               Int       @id @default(autoincrement())
+  dataCriacao     DateTime  @default(now()) @db.Timestamp(0) @map("data_criacao")
+  dataAtualizacao DateTime? @db.Timestamp(0) @map("data_atualizacao")
+  nome             String    @db.VarChar(150)
+  sigla            String    @db.VarChar(2)
+  cidades          Cidades[]
+  @@map("estados")
+}
+
+model Notificacoes {
+  id               Int       @id @default(autoincrement())
+  dataCriacao     DateTime  @default(now()) @db.Timestamp(0) @map("data_criacao")
+  dataAtualizacao DateTime? @db.Timestamp(0) @map("data_atualizacao")
+  titulo           String    @db.VarChar(150)
+  conteudo         String    @db.VarChar(300)
+  usuarioId       Int @map("usuario_id")
+  usuarios         Usuarios  @relation(fields: [usuarioId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_notificacoes_usuarios1")
+
+  @@index([usuarioId], map: "fk_notificacoes_usuarios1_idx")
+  @@map("notificacoes")
+}
+
+model Produtos {
+  id                 Int                @id @default(autoincrement())
+  dataCriacao       DateTime           @default(now()) @db.Timestamp(0) @map("data_criacao")
+  dataAtualizacao   DateTime?          @db.Timestamp(0) @map("data_atualizacao")
+  nome               String             @db.VarChar(150)
+  descricao          String?            @db.VarChar(1000)
+  categoriaId       Int @map("categoria_id")
+  categoriaProdutos CategoriaProdutos @relation(fields: [categoriaId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_produtos_categoria_produtos1")
+  recursos           Recursos[]
+
+  @@index([categoriaId], map: "fk_produtos_categoria_produtos1_idx")
+  @@map("produtos")
+}
+
+model Projetos {
+  id               Int             @id @default(autoincrement())
+  dataCriacao     DateTime        @default(now()) @db.Timestamp(0) @map("data_criacao")
+  dataAtualizacao DateTime?       @db.Timestamp(0) @map("data_atualizacao")
+  titulo           String          @db.VarChar(200)
+  descricao        String          @db.VarChar(1000)
+  dataInicio      DateTime        @db.Date @map("data_inicio")
+  ativo            Boolean         @default(false)
+  enderecoId      Int @map("endereco_id")
+  projetistaId    Int @map("projetista_id")
+  enderecos        Enderecos       @relation(fields: [enderecoId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_projetos_enderecos1")
+  usuarios         Usuarios        @relation(fields: [projetistaId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_projetos_usuarios1")
+  colaboradores    Colaboradores[]
+
+  @@index([enderecoId], map: "fk_projetos_enderecos1_idx")
+  @@index([projetistaId], map: "fk_projetos_usuarios1_idx")
+  @@map("projetos")
+}
+
+model Recursos {
+  id               Int       @id @default(autoincrement())
+  dataCriacao     DateTime  @default(now()) @db.Timestamp(0) @map("data_criacao")
+  dataAtualizacao DateTime? @db.Timestamp(0) @map("data_atualizacao")
+  quantidade       Float
+  descricao        String?   @db.VarChar(1000)
+  produtoId       Int @map("produto_id")
+  tarefaId        Int @map("tarefa_id")
+  produtos         Produtos  @relation(fields: [produtoId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_recursos_produtos1")
+  tarefas          Tarefas   @relation(fields: [tarefaId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_recursos_tarefas1")
+
+  @@index([produtoId], map: "fk_recursos_produtos1_idx")
+  @@index([tarefaId], map: "fk_recursos_tarefas1_idx")
+  @@map("recursos")
+}
+
+model Tarefas {
+  id               Int            @id @default(autoincrement())
+  dataCriacao     DateTime       @default(now()) @db.Timestamp(0) @map("data_criacao")
+  dataAtualizacao DateTime?      @db.Timestamp(0) @map("data_atualizacao")
+  titulo           String         @db.VarChar(150)
+  descricao        String         @db.VarChar(1000)
+  dataInicio      DateTime       @db.Date @map("data_inicio")
+  dataFim         DateTime       @db.Date @map("data_fim")
+  estado           estadoDaTarefa @default(pendente)
+  colaboradorId   Int @map("colaborador_id")
+  colaboradores    Colaboradores  @relation(fields: [colaboradorId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_tarefas_colaboradores1")
+  comentarios      Comentarios[]
+  recursos         Recursos[]
+
+  @@index([colaboradorId], map: "fk_tarefas_colaboradores1_idx")
+  @@map("tarefas")
+}
+
+model Usuarios {
+  id               Int                   @id @default(autoincrement())
+  dataCriacao     DateTime              @default(now()) @db.Timestamp(0) @map("data_criacao")
+  dataAtualizacao DateTime?             @db.Timestamp(0) @map("data_atualizacao")
+  nome             String                @db.VarChar(150)
+  email            String                @unique(map: "email_UNIQUE") @db.VarChar(255)
+  dataNascimento  DateTime              @db.Date @map("data_nascimento")
+  nivelAcesso     nivelAcessoUsuario @default(empregado) @map("nivel_acesso")
+  ativo            Boolean               @default(true)
+  enderecoId      Int @map("endereco_id")
+  senha String @db.VarChar(1000)
+  enderecos        Enderecos             @relation(fields: [enderecoId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_usuarios_enderecos1")
+  colaboradores    Colaboradores[]
+  notificacoes     Notificacoes[]
+  projetos         Projetos[]
+
+  @@index([enderecoId], map: "fk_usuarios_enderecos1_idx")
+  @@map("usuarios")
+}
+
+enum nivelAcessoUsuario {
+  projetista
+  administrador
+  empregado
+}
+
+enum estadoDaTarefa {
+  pendente
+  confirmada
+  concluida
+}
