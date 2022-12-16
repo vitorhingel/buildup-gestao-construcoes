@@ -2,7 +2,7 @@ import { ForbiddenException, Injectable, NotFoundException } from "@nestjs/commo
 
 import { JwtService } from "@nestjs/jwt";
 import { Usuarios } from "@prisma/client";
-import { UsuariosService } from "src/usuarios/usuarios.service";
+import { UsuariosService } from "../usuarios/usuarios.service";
 
 @Injectable()
 export class AuthService {

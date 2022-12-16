@@ -6,19 +6,18 @@ import { jwtConstants } from "./constants";
 import { JwtStrategy } from "./strategies/jwt.strategy";
 import { LocalStrategy } from "./strategies/local.strategy";
 import { AuthController } from "./auth.controller";
-import { UsuariosModule } from "src/usuarios/usuarios.module";
-import { PrismaService } from "src/prisma.service";
+import { PrismaService } from "../prisma.service";
+import { UsuariosService } from "../usuarios/usuarios.service";
 
 @Module({
   imports: [
     PassportModule,
-    UsuariosModule,
     JwtModule.register({
       secret: jwtConstants.secret,
       signOptions: { expiresIn: "12 hours" },
     }),
   ],
-  providers: [AuthService, LocalStrategy, JwtStrategy, PrismaService],
+  providers: [AuthService, LocalStrategy, JwtStrategy, PrismaService, UsuariosService],
   exports: [AuthService],
   controllers: [AuthController],
 })

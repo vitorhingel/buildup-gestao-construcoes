@@ -1,87 +1,84 @@
-import { JwtModule } from '@nestjs/jwt';
-import { PassportModule } from '@nestjs/passport';
-import { Test, TestingModule } from '@nestjs/testing';
-import { UsersModule } from '../users/users.module';
-import { AuthService } from './auth.service';
-import { jwtConstants } from './constants';
-import { JwtStrategy } from './strategies/jwt.strategy';
-import { LocalStrategy } from './strategies/local.strategy';
+import { Test, TestingModule } from "@nestjs/testing";
+import { ForbiddenException } from "@nestjs/common";
+import { AuthService } from "./auth.service";
+import { MockContext, Context, createMockContext } from "../context.prisma";
+import { nivelAcessoUsuario, Prisma } from "@prisma/client";
+import { PrismaService } from "../prisma.service";
+import { UsuariosService } from "../usuarios/usuarios.service";
+import { PassportModule } from "@nestjs/passport";
+import { JwtModule } from "@nestjs/jwt";
+import { jwtConstants } from "./constants";
+import { LocalStrategy } from "./strategies/local.strategy";
+import { JwtStrategy } from "./strategies/jwt.strategy";
 
-describe('AuthService', () => {
-  let service: AuthService;
+let mockCtx: MockContext;
+let ctx: Context;
 
-  beforeEach(async () => {
-    const moduleRef: TestingModule = await Test.createTestingModule({
-      imports: [
-        UsersModule,
-        PassportModule,
-        JwtModule.register({
-          secret: jwtConstants.secret,
-          signOptions: { expiresIn: '60s' },
-        }),
-      ],
-      providers: [AuthService, LocalStrategy, JwtStrategy],
-    }).compile();
-
-    service = moduleRef.get<AuthService>(AuthService);
-  });
-
-  it('should be defined', () => {
-    expect(service).toBeDefined();
-  });
-});
-
-describe('validateUser', () => {
-  let service: AuthService;
+describe("AuthService", () => {
+  let authService: AuthService;
+  let usuarioService: UsuariosService;
+  let prisma: PrismaService;
 
   beforeEach(async () => {
-    const moduleRef: TestingModule = await Test.createTestingModule({
+    const module: TestingModule = await Test.createTestingModule({
       imports: [
-        UsersModule,
         PassportModule,
+
         JwtModule.register({
           secret: jwtConstants.secret,
-          signOptions: { expiresIn: '60s' },
+          signOptions: { expiresIn: "12 hours" },
         }),
       ],
-      providers: [AuthService, LocalStrategy, JwtStrategy],
+      providers: [AuthService, LocalStrategy, JwtStrategy, PrismaService, UsuariosService],
     }).compile();
 
-    service = moduleRef.get<AuthService>(AuthService);
+    authService = module.get<AuthService>(AuthService);
+    prisma = module.get<PrismaService>(PrismaService);
+    usuarioService = module.get<UsuariosService>(UsuariosService);
+
+    mockCtx = createMockContext();
+    ctx = mockCtx as unknown as Context;
   });
 
-  it('should return a user object when credentials are valid', async () => {
-    const res = await service.validateUser('maria', 'guess');
-    expect(res.userId).toEqual(3);
+  it("As credenciais providenciadas estão corretas", async () => {
+    const encontrarUsuarioMockedResponse = {
+      id: 18,
+      dataAtualizacao: null,
+      nome: "Vitor Hingel",
+      email: "testing@gmail.com",
+      nivelAcesso: nivelAcessoUsuario.administrador,
+      dataCriacao: "2022-12-06T02:05:55.000Z",
+      dataNascimento: "2022-12-06T00:00:00.000Z",
+      ativo: true,
+      enderecoId: 1,
+      senha: "$2b$10$kkfBMU7DKPeSlRYkKouU5OYow/RNVah.yuXm.Ct1XVc6jDNQNmh8e",
+    };
+
+    usuarioService.encontrarUsuario = jest.fn().mockResolvedValueOnce(encontrarUsuarioMockedResponse);
+
+    await expect(authService.validarUsuario(encontrarUsuarioMockedResponse.email, "vitor123")).resolves.toEqual(
+      encontrarUsuarioMockedResponse
+    );
   });
 
-  it('should return null when credentials are invalid', async () => {
-    const res = await service.validateUser('xxx', 'xxx');
-    expect(res).toBeNull();
-  });
-});
+  it("As credenciais providenciadas estão erradas", async () => {
+    const encontrarUsuarioMockedResponse = {
+      id: 18,
+      dataAtualizacao: null,
+      nome: "Vitor Hingel",
+      email: "testing@gmail.com",
+      nivelAcesso: nivelAcessoUsuario.administrador,
+      dataCriacao: "2022-12-06T02:05:55.000Z",
+      dataNascimento: "2022-12-06T00:00:00.000Z",
+      ativo: true,
+      enderecoId: 1,
+      senha: "$2b$10$kkfBMU7DKPeSlRYkKouU5OYow/RNVah.yuXm.Ct1XVc6jDNQNmh8e",
+    };
 
-describe('validateLogin', () => {
-  let service: AuthService;
+    usuarioService.encontrarUsuario = jest.fn().mockResolvedValueOnce(encontrarUsuarioMockedResponse);
 
-  beforeEach(async () => {
-    const moduleRef: TestingModule = await Test.createTestingModule({
-      imports: [
-        UsersModule,
-        PassportModule,
-        JwtModule.register({
-          secret: jwtConstants.secret,
-          signOptions: { expiresIn: '60s' },
-        }),
-      ],
-      providers: [AuthService, LocalStrategy, JwtStrategy],
-    }).compile();
-
-    service = moduleRef.get<AuthService>(AuthService);
-  });
-
-  it('should return JWT object when credentials are valid', async () => {
-    const res = await service.login({ username: 'maria', userId: 3 });
-    expect(res.access_token).toBeDefined();
+    await expect(authService.validarUsuario(encontrarUsuarioMockedResponse.email, "vitor1233")).rejects.toEqual(
+      new ForbiddenException("Senha inválida")
+    );
   });
 });

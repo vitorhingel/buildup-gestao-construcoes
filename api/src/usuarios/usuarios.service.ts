@@ -1,8 +1,9 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, BadRequestException } from "@nestjs/common";
 
 import { Usuarios, Prisma } from "@prisma/client";
-import { PrismaService } from "src/prisma.service";
+import { PrismaService } from "../prisma.service";
 import * as bcrypt from "bcrypt";
+
 const saltOrRounds = 10;
 
 @Injectable()
@@ -10,9 +11,11 @@ export class UsuariosService {
   constructor(private prisma: PrismaService) {}
 
   async encontrarUsuario(postWhereUniqueInput: Prisma.UsuariosWhereUniqueInput): Promise<Usuarios | null> {
-    return this.prisma.usuarios.findUnique({
+    const usuario = this.prisma.usuarios.findUnique({
       where: postWhereUniqueInput,
     });
+
+    return usuario;
   }
 
   async validarSenha(hashSenhaBanco: string, senha: string): Promise<boolean> {
@@ -49,14 +52,18 @@ export class UsuariosService {
   async criarUsuarios(data: Prisma.UsuariosCreateInput): Promise<Usuarios> {
     const { senha, ...dados } = data;
 
+    if (!senha || senha.trim().length === 0) throw new BadRequestException("Você deve fornecer uma senha válida");
+
     const hashSenha = await bcrypt.hash(senha, saltOrRounds);
 
-    return this.prisma.usuarios.create({
+    const newUser = this.prisma.usuarios.create({
       data: {
         ...dados,
         senha: hashSenha,
       },
     });
+
+    return newUser;
   }
 
   async atualizarUsuarios(params: { where: Prisma.UsuariosWhereUniqueInput; data: Prisma.UsuariosUpdateInput }): Promise<Usuarios> {

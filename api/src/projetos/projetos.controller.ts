@@ -8,7 +8,7 @@ export class ProjetosController {
 
   @UseGuards(JwtAuthGuard)
   @Get(":id")
-  async getProjeto(@Param("id") id: string): Promise<ProjetosModel> {
+  async getProjeto(@Param("id") id: string): Promise<ProjetosModel | null> {
     return this.projetosService.getProjeto({ id: Number(id) });
   }
 
@@ -54,7 +54,7 @@ export class ProjetosController {
 
   @UseGuards(JwtAuthGuard)
   @Delete(":id")
-  async deleteProjeto(@Param("id") id: string): Promise<ProjetosModel> {
-    return this.projetosService.deleteProjetos({ id: Number(id) });
+  async deleteProjeto(@Param("id") id: string, @Req() req): Promise<ProjetosModel> {
+    return this.projetosService.deleteProjetos({ id: Number(id) }, req.user.usuarioId);
   }
 }

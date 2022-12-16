@@ -1,6 +1,6 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
-import { Prisma, Projetos } from "@prisma/client";
-import { PrismaService } from "src/prisma.service";
+import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from "@nestjs/common";
+import { nivelAcessoUsuario, Prisma, Projetos } from "@prisma/client";
+import { PrismaService } from "../prisma.service";
 
 @Injectable()
 export class ProjetosService {
@@ -63,6 +63,19 @@ export class ProjetosService {
   }
 
   async createProjetos(data: Prisma.ProjetosCreateInput): Promise<Projetos> {
+    const usuarioId = data?.usuarios?.connect?.id;
+
+    if (!usuarioId) throw new BadRequestException("Você deve definir o projetista.");
+
+    const usuario = await this.prisma.usuarios.findUnique({
+      where: {
+        id: usuarioId,
+      },
+    });
+
+    if (!usuario || usuario.nivelAcesso !== nivelAcessoUsuario.projetista)
+      throw new BadRequestException("Somente projetistas podem criar projetos.");
+
     return this.prisma.projetos.create({
       data,
     });
@@ -76,7 +89,11 @@ export class ProjetosService {
     });
   }
 
-  async deleteProjetos(where: Prisma.ProjetosWhereUniqueInput): Promise<Projetos> {
+  async deleteProjetos(where: Prisma.ProjetosWhereUniqueInput, userId: number): Promise<Projetos> {
+    const projeto = await this.prisma.projetos.findUnique({ where });
+
+    if (!projeto || projeto.projetistaId !== userId) throw new ForbiddenException("Somente o criador pode deletar esse projeto.");
+
     return this.prisma.projetos.delete({
       where,
     });
